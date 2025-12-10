@@ -1,0 +1,40 @@
+name: Auto-Update IPTV Editor EPG
+
+on:
+  # Runs every 4 days at 06:00 UTC
+  schedule:
+    - cron: "0 6 */3 * *"
+
+  # Lets you trigger it manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  update-epg:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download latest XMLTV file
+        run: |
+          curl -L "https://opop.pro/bUVHyvJmBzbBEPE" -o IPTVEditor_epg.xml
+
+      - name: Show diff status
+        run: |
+          git status
+          git diff || true
+
+      - name: Commit and push if updated
+        run: |
+          if git diff --quiet; then
+            echo "No changes detected in IPTVEditor_epg.xml. Exiting."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add IPTVEditor_epg.xml
+          git commit -m "Auto-update IPTV EPG ($(date -u +'%Y-%m-%d %H:%M:%S UTC'))"
+          git push
